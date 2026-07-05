@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg0:#05070d; --bg1:#0c0f1a; --bg2:#121625; --bg3:#1a1f32; --bg4:#21273d;
+  --bdr:#ffffff0f; --bdr2:#ffffff18; --bdr3:#ffffff25;
+  --txt:#e8ecf6; --txt2:#9aa3bf; --txt3:#5a6480;
+  --acc:#4f8ef7; --acc2:#7ab3ff; --acc-bg:#4f8ef718;
+  --lo:#22c55e; --lo-bg:#22c55e14; --lo-bdr:#22c55e30;
+  --me:#f59e0b; --me-bg:#f59e0b14; --me-bdr:#f59e0b30;
+  --hi:#ef4444; --hi-bg:#ef444414; --hi-bdr:#ef444430;
+  --cr:#ff1744; --cr-bg:#ff174414;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  background: var(--bg0);
+  color: var(--txt);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar       { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+
+@keyframes pulse-live { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }

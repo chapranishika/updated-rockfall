@@ -1,0 +1,75 @@
+# Rockfall-AI — docker-compose.yml
+# Usage:
+#   cp .env.example .env          # first time only
+#   docker compose up --build     # first run
+#   docker compose up             # subsequent runs
+# ─────────────────────────────────────────────────────────────────────────────
+version: "3.9"
+
+services:
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: rockfall-backend:latest
+    container_name: rockfall-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    env_file: .env
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount local trained weights directly — no copying needed after training
+      - ./ml/saved_models:/app/ml/saved_models:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    networks:
+      - rockfall_net
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+      args:
+        # Uses internal Docker network name so WS connects correctly
+        NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://backend:8000}"
+    image: rockfall-ui:latest
+    container_name: rockfall-ui
+    restart: unless-stopped
+    ports:
+      - "${UI_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - rockfall_net
+
+  mongo:
+    image: mongo:7.0-jammy
+    container_name: rockfall-mongo
+    restart: unless-stopped
+    profiles: [db]
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "${MONGO_USER:-rockfall}"
+      MONGO_INITDB_ROOT_PASSWORD: "${MONGO_PASSWORD:-changeme}"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - rockfall_net
+
+volumes:
+  mongo_data:
+
+networks:
+  rockfall_net:
+    driver: bridge

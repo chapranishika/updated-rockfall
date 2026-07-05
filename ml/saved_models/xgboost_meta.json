@@ -1,0 +1,12 @@
+{
+  "model": "XGBoost",
+  "n_features": 123,
+  "n_train": 400,
+  "n_test": 100,
+  "label_source": "IsolationForest anomaly scores (not real events)",
+  "test_auc": 0.8823,
+  "test_f1_macro": 0.6986,
+  "baseline_auc": 0.6688,
+  "trained_at": "2026-06-04 10:41:00",
+  "note": "Labels are IF anomaly scores. Replace with real event data for production."
+}

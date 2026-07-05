@@ -1,0 +1,46 @@
+# ── Stage 1: Build ─────────────────────────────────────────────────────────────
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential curl git && rm -rf /var/lib/apt/lists/*
+
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY requirements.txt .
+# Torch CPU-only — no CUDA needed for inference
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+        torch torchvision \
+        --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir -r requirements.txt
+
+# ── Stage 2: Runtime ───────────────────────────────────────────────────────────
+FROM python:3.11-slim AS runtime
+
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl libgomp1 && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+COPY backend/ ./backend/
+COPY ml/      ./ml/
+# NOTE: data/ intentionally excluded — drone images are for training only,
+# not needed at inference time. Weights are mounted via volume at runtime.
+
+RUN mkdir -p ml/saved_models/segmentation_v2
+
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["uvicorn", "backend.main:app", \
+     "--host", "0.0.0.0", "--port", "8000", \
+     "--workers", "2", "--log-level", "info"]
