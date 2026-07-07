@@ -7,6 +7,7 @@ export default function TouristPage() {
   const [locationName, setLocationName] = useState("");
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [weatherTab, setWeatherTab] = useState<"current" | "forecast">("current");
   const [file, setFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -286,9 +287,27 @@ export default function TouristPage() {
           }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: color, borderRadius: "20px 20px 0 0" }} />
             
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, color: "var(--txt3)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, color: "var(--txt3)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".12em", marginBottom: 6 }}>
               <MapPin size={12} style={{ color }} />
               <span>{result.tourist_meta?.resolved_location}</span>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+              {result.tourist_meta?.city && result.tourist_meta.city !== "Unknown City" && (
+                <span style={{ background: "var(--bg3)", color: "var(--txt2)", fontSize: 10, padding: "2px 8px", borderRadius: 4, border: "1px solid var(--bdr)" }}>
+                  🌆 {result.tourist_meta.city}
+                </span>
+              )}
+              {result.tourist_meta?.state && result.tourist_meta.state !== "Unknown State" && (
+                <span style={{ background: "var(--bg3)", color: "var(--txt2)", fontSize: 10, padding: "2px 8px", borderRadius: 4, border: "1px solid var(--bdr)" }}>
+                  📍 {result.tourist_meta.state}
+                </span>
+              )}
+              {result.tourist_meta?.country && result.tourist_meta.country !== "Unknown Country" && (
+                <span style={{ background: "var(--bg3)", color: "var(--txt2)", fontSize: 10, padding: "2px 8px", borderRadius: 4, border: "1px solid var(--bdr)" }}>
+                  🏳️ {result.tourist_meta.country}
+                </span>
+              )}
             </div>
 
             <p style={{ fontSize: 64, fontWeight: 700, letterSpacing: "-3px", lineHeight: 1, color }}>{pct}%</p>
@@ -330,46 +349,100 @@ export default function TouristPage() {
           {/* Real-time Online Weather integration */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Card style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <CardLabel text="Online Weather Info" />
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ background: "var(--bg3)", padding: 10, borderRadius: 10, color: "var(--acc)" }}>
-                  <CloudRain size={22} />
-                </div>
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: "var(--txt)" }}>
-                    {result.tourist_meta?.weather?.description}
-                  </p>
-                  <p style={{ fontSize: 11, color: "var(--txt3)", marginTop: 2 }}>
-                    Real-time online data from Open-Meteo
-                  </p>
-                </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <CardLabel text="Weather Forecast Center" />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 14px", marginTop: 4 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <Thermometer size={14} style={{ color: "var(--txt3)" }} />
-                  <span style={{ fontSize: 12, color: "var(--txt2)" }}>
-                    Temp: <strong>{result.tourist_meta?.weather?.temperature_c}°C</strong>
-                  </span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <CloudRain size={14} style={{ color: "var(--txt3)" }} />
-                  <span style={{ fontSize: 12, color: "var(--txt2)" }}>
-                    Rain: <strong>{result.tourist_meta?.weather?.rainfall_mm} mm</strong>
-                  </span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <Droplets size={14} style={{ color: "var(--txt3)" }} />
-                  <span style={{ fontSize: 12, color: "var(--txt2)" }}>
-                    Humidity: <strong>{result.tourist_meta?.weather?.humidity_pct}%</strong>
-                  </span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <Wind size={14} style={{ color: "var(--txt3)" }} />
-                  <span style={{ fontSize: 12, color: "var(--txt2)" }}>
-                    Wind: <strong>{result.tourist_meta?.weather?.wind_speed_kmh} km/h</strong>
-                  </span>
-                </div>
+              <div style={{ display: "flex", borderBottom: "1px solid var(--bdr)", paddingBottom: 2, marginBottom: 2 }}>
+                <button
+                  type="button"
+                  onClick={() => setWeatherTab("current")}
+                  style={{
+                    flex: 1, padding: "8px 0", background: "none", border: "none",
+                    borderBottom: weatherTab === "current" ? "2px solid var(--acc)" : "2px solid transparent",
+                    color: weatherTab === "current" ? "var(--txt)" : "var(--txt3)",
+                    fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.2s"
+                  }}
+                >
+                  Current Weather
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWeatherTab("forecast")}
+                  style={{
+                    flex: 1, padding: "8px 0", background: "none", border: "none",
+                    borderBottom: weatherTab === "forecast" ? "2px solid var(--acc)" : "2px solid transparent",
+                    color: weatherTab === "forecast" ? "var(--txt)" : "var(--txt3)",
+                    fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.2s"
+                  }}
+                >
+                  7-Day Forecast
+                </button>
               </div>
+
+              {weatherTab === "current" ? (
+                <>
+                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                    <div style={{ background: "var(--bg3)", padding: 10, borderRadius: 10, color: "var(--acc)" }}>
+                      <CloudRain size={22} />
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: "var(--txt)" }}>
+                        {result.tourist_meta?.weather?.description}
+                      </p>
+                      <p style={{ fontSize: 11, color: "var(--txt3)", marginTop: 2 }}>
+                        Real-time online data from Open-Meteo
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 14px", marginTop: 4 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <Thermometer size={14} style={{ color: "var(--txt3)" }} />
+                      <span style={{ fontSize: 12, color: "var(--txt2)" }}>
+                        Temp: <strong>{result.tourist_meta?.weather?.temperature_c}°C</strong>
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <CloudRain size={14} style={{ color: "var(--txt3)" }} />
+                      <span style={{ fontSize: 12, color: "var(--txt2)" }}>
+                        Rain: <strong>{result.tourist_meta?.weather?.rainfall_mm} mm</strong>
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <Droplets size={14} style={{ color: "var(--txt3)" }} />
+                      <span style={{ fontSize: 12, color: "var(--txt2)" }}>
+                        Humidity: <strong>{result.tourist_meta?.weather?.humidity_pct}%</strong>
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <Wind size={14} style={{ color: "var(--txt3)" }} />
+                      <span style={{ fontSize: 12, color: "var(--txt2)" }}>
+                        Wind: <strong>{result.tourist_meta?.weather?.wind_speed_kmh} km/h</strong>
+                      </span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 160, overflowY: "auto", paddingRight: 4 }}>
+                  {result.tourist_meta?.forecast?.map((day: any, idx: number) => {
+                    const dateObj = new Date(day.date);
+                    const dayName = idx === 0 ? "Today" : idx === 1 ? "Tomorrow" : dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                    return (
+                      <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, padding: "6px 10px", background: "var(--bg3)", borderRadius: 6 }}>
+                        <span style={{ color: "var(--txt)", fontWeight: 600, width: "95px" }}>{dayName}</span>
+                        <span style={{ color: "var(--txt3)", flex: 1, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", marginRight: 8 }}>{day.description}</span>
+                        <span style={{ color: "var(--txt2)", width: "65px", textAlign: "right" }}>
+                          <strong>{Math.round(day.temp_max)}°</strong> / {Math.round(day.temp_min)}°
+                        </span>
+                        {day.precipitation_mm > 0 ? (
+                          <span style={{ color: "#3b82f6", fontSize: 10, width: "50px", textAlign: "right" }}>🌧️ {day.precipitation_mm}mm</span>
+                        ) : (
+                          <span style={{ color: "var(--txt3)", fontSize: 10, width: "50px", textAlign: "right" }}>☀️ 0mm</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </Card>
 
             <Card style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -441,6 +514,36 @@ export default function TouristPage() {
                     Divergence score: {result.explainability?.divergence?.toFixed(4)}
                   </p>
                 </CardSm>
+              </div>
+            </Card>
+          )}
+
+          {/* Nearby Terrains Danger Assessment */}
+          {result.tourist_meta?.terrains && (
+            <Card style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <CardLabel text={`Nearby Terrains & Danger Scores (${result.tourist_meta.terrain_category})`} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {result.tourist_meta.terrains.map((t: any, idx: number) => {
+                  let barColor = "#22c55e"; // green
+                  if (t.danger_score >= 75) barColor = "#ef4444"; // red
+                  else if (t.danger_score >= 55) barColor = "#f97316"; // orange
+                  else if (t.danger_score >= 30) barColor = "#eab308"; // yellow
+                  
+                  return (
+                    <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 6, paddingBottom: idx < result.tourist_meta.terrains.length - 1 ? 10 : 0, borderBottom: idx < result.tourist_meta.terrains.length - 1 ? "1px solid var(--bdr)" : "none" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, fontWeight: 600 }}>
+                        <span style={{ color: "var(--txt)" }}>🏞️ {t.name}</span>
+                        <span style={{ color: barColor, background: `${barColor}15`, padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>{t.danger_score}% Danger</span>
+                      </div>
+                      <div style={{ width: "100%", height: 6, background: "var(--bg3)", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ width: `${t.danger_score}%`, height: "100%", background: barColor, borderRadius: 3 }} />
+                      </div>
+                      <p style={{ fontSize: 11, color: "var(--txt2)", marginTop: 2, lineHeight: 1.4 }}>
+                        {t.condition}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </Card>
           )}

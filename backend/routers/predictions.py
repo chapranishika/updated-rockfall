@@ -228,6 +228,10 @@ async def predict_tourist(
     lon = longitude
     resolved_location = location_name
 
+    city = "Unknown City"
+    state = "Unknown State"
+    country = "Unknown Country"
+
     # If coordinates are provided, skip forward geocoding, but reverse geocode to get a human-readable location
     if lat is not None and lon is not None:
         try:
@@ -242,6 +246,10 @@ async def predict_tourist(
                 if rev_res.status_code == 200:
                     rev_data = rev_res.json()
                     resolved_location = rev_data.get("display_name", f"GPS: {lat:.5f}, {lon:.5f}")
+                    addr = rev_data.get("address", {})
+                    city = addr.get("city") or addr.get("town") or addr.get("village") or addr.get("municipality") or addr.get("county") or "Unknown City"
+                    state = addr.get("state") or "Unknown State"
+                    country = addr.get("country") or "Unknown Country"
                 else:
                     resolved_location = f"GPS: {lat:.5f}, {lon:.5f}"
         except Exception:
@@ -267,9 +275,12 @@ async def predict_tourist(
         lat = loc["latitude"]
         lon = loc["longitude"]
         resolved_location = f"{loc['name']}, {loc.get('admin1', '')}, {loc.get('country', '')}"
+        city = loc.get("name", "Unknown City")
+        state = loc.get("admin1", "Unknown State")
+        country = loc.get("country", "Unknown Country")
 
-    # Fetch weather (include humidity, wind speed)
-    weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,rain,showers,snowfall,wind_speed_10m,weather_code"
+    # Fetch weather (include humidity, wind speed, and 7-day daily forecast)
+    weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,rain,showers,snowfall,wind_speed_10m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto"
     try:
         async with httpx.AsyncClient() as client:
             weather_res = await client.get(weather_url)
@@ -307,6 +318,27 @@ async def predict_tourist(
     }
     weather_desc = WMO_CODES.get(w_code, "Unknown Weather")
 
+    # Parse 7-day daily forecast
+    daily = weather_data.get("daily", {})
+    daily_forecasts = []
+    if daily:
+        times = daily.get("time", [])
+        temp_maxs = daily.get("temperature_2m_max", [])
+        temp_mins = daily.get("temperature_2m_min", [])
+        precip_sums = daily.get("precipitation_sum", [])
+        codes = daily.get("weather_code", [])
+        
+        for i in range(len(times)):
+            code_val = codes[i] if i < len(codes) else 0
+            daily_forecasts.append({
+                "date": times[i],
+                "temp_max": temp_maxs[i] if i < len(temp_maxs) else None,
+                "temp_min": temp_mins[i] if i < len(temp_mins) else None,
+                "precipitation_mm": precip_sums[i] if i < len(precip_sums) else 0.0,
+                "description": WMO_CODES.get(code_val, "Unknown Weather"),
+                "code": code_val
+            })
+
     # Get live sensor data
     try:
         from backend.routers.websocket import _simulator
@@ -337,10 +369,101 @@ async def predict_tourist(
 
     result = _reg().predict_fused(sensors, img_bytes)
 
+    # Dynamic terrains risk calculation
+    loc_lower = resolved_location.lower()
+    is_mountain = any(w in loc_lower for w in ["yosemite", "mount", "mountain", "hill", "peak", "pass", "valley", "canyon", "ridge", "cliff", "sierra", "alp", "himalaya"])
+    is_coast = any(w in loc_lower for w in ["beach", "coast", "bay", "port", "ocean", "sea", "lake", "river", "waterfront", "island"])
+    
+    img_score = result.get("explainability", {}).get("image_score", 0.0)
+    vib = sensors["vibration"]
+    disp = sensors["displacement"]
+    
+    terrains = []
+    if is_mountain:
+        terrain_category = "Mountainous Terrain"
+        
+        # Terrain 1
+        t1_score = min(100.0, 20.0 + img_score * 50.0 + (30.0 if rainfall > 5.0 else rainfall * 3.0) + min(30.0, vib * 25.0))
+        t1_cond = "Stable. Safe for traverse. Routine monitoring active."
+        if t1_score >= 75.0: t1_cond = "Critical. High danger of imminent slide. Evacuation required."
+        elif t1_score >= 55.0: t1_cond = "Warning. Mud saturation or rock debris detected. Restrict access."
+        elif t1_score >= 30.0: t1_cond = "Caution. Slow movement observed. Avoid lingering near slopes."
+        terrains.append({"name": "Cliffside Hiking Trails", "danger_score": round(t1_score, 1), "condition": t1_cond})
+        
+        # Terrain 2
+        t2_score = min(100.0, 15.0 + (35.0 if rainfall > 10.0 else rainfall * 2.5) + min(40.0, disp * 3.0))
+        t2_cond = "Stable. Safe for traverse. Routine monitoring active."
+        if t2_score >= 75.0: t2_cond = "Critical. High danger of imminent slide. Evacuation required."
+        elif t2_score >= 55.0: t2_cond = "Warning. Mud saturation or rock debris detected. Restrict access."
+        elif t2_score >= 30.0: t2_cond = "Caution. Slow movement observed. Avoid lingering near slopes."
+        terrains.append({"name": "Talus Scree Slopes", "danger_score": round(t2_score, 1), "condition": t2_cond})
+        
+        # Terrain 3
+        t3_score = min(100.0, 10.0 + img_score * 30.0 + (25.0 if rainfall > 15.0 else rainfall * 1.5) + min(35.0, vib * 30.0))
+        t3_cond = "Stable. Safe for traverse. Routine monitoring active."
+        if t3_score >= 75.0: t3_cond = "Critical. High danger of imminent slide. Evacuation required."
+        elif t3_score >= 55.0: t3_cond = "Warning. Mud saturation or rock debris detected. Restrict access."
+        elif t3_score >= 30.0: t3_cond = "Caution. Slow movement observed. Avoid lingering near slopes."
+        terrains.append({"name": "Mountain Highway Rock-Cuts", "danger_score": round(t3_score, 1), "condition": t3_cond})
+        
+    elif is_coast:
+        terrain_category = "Coastal / Waterfront Slopes"
+        # Terrain 1
+        t1_score = min(100.0, 25.0 + (35.0 if rainfall > 8.0 else rainfall * 3.0) + (15.0 if wind_speed > 30.0 else wind_speed * 0.4))
+        t1_cond = "Stable. Safe for traverse. Routine monitoring active."
+        if t1_score >= 75.0: t1_cond = "Critical. High danger of imminent slide. Evacuation required."
+        elif t1_score >= 55.0: t1_cond = "Warning. Mud saturation or rock debris detected. Restrict access."
+        elif t1_score >= 30.0: t1_cond = "Caution. Slow movement observed. Avoid lingering near slopes."
+        terrains.append({"name": "Coastal Path Cliff Edges", "danger_score": round(t1_score, 1), "condition": t1_cond})
+        
+        # Terrain 2
+        t2_score = min(100.0, 15.0 + img_score * 40.0 + (25.0 if rainfall > 12.0 else rainfall * 1.8))
+        t2_cond = "Stable. Safe for traverse. Routine monitoring active."
+        if t2_score >= 75.0: t2_cond = "Critical. High danger of imminent slide. Evacuation required."
+        elif t2_score >= 55.0: t2_cond = "Warning. Mud saturation or rock debris detected. Restrict access."
+        elif t2_score >= 30.0: t2_cond = "Caution. Slow movement observed. Avoid lingering near slopes."
+        terrains.append({"name": "Shoreline Scree", "danger_score": round(t2_score, 1), "condition": t2_cond})
+        
+        # Terrain 3
+        t3_score = min(100.0, 12.0 + min(30.0, disp * 2.0) + (20.0 if wind_speed > 25.0 else wind_speed * 0.5))
+        t3_cond = "Stable. Safe for traverse. Routine monitoring active."
+        if t3_score >= 75.0: t3_cond = "Critical. High danger of imminent slide. Evacuation required."
+        elif t3_score >= 55.0: t3_cond = "Warning. Mud saturation or rock debris detected. Restrict access."
+        elif t3_score >= 30.0: t3_cond = "Caution. Slow movement observed. Avoid lingering near slopes."
+        terrains.append({"name": "Coastal Highway Retaining Walls", "danger_score": round(t3_score, 1), "condition": t3_cond})
+    else:
+        terrain_category = "Rolling Hills / Lowland Terrain"
+        # Terrain 1
+        t1_score = min(100.0, 10.0 + img_score * 30.0 + (25.0 if rainfall > 12.0 else rainfall * 1.5) + min(20.0, vib * 15.0))
+        t1_cond = "Stable. Safe for traverse. Routine monitoring active."
+        if t1_score >= 75.0: t1_cond = "Critical. High danger of imminent slide. Evacuation required."
+        elif t1_score >= 55.0: t1_cond = "Warning. Mud saturation or rock debris detected. Restrict access."
+        elif t1_score >= 30.0: t1_cond = "Caution. Slow movement observed. Avoid lingering near slopes."
+        terrains.append({"name": "Roadside Slope Cuts", "danger_score": round(t1_score, 1), "condition": t1_cond})
+        
+        # Terrain 2
+        t2_score = min(100.0, 5.0 + (15.0 if rainfall > 15.0 else rainfall * 0.8))
+        t2_cond = "Stable. Safe for traverse. Routine monitoring active."
+        if t2_score >= 75.0: t2_cond = "Critical. High danger of imminent slide. Evacuation required."
+        elif t2_score >= 55.0: t2_cond = "Warning. Mud saturation or rock debris detected. Restrict access."
+        elif t2_score >= 30.0: t2_cond = "Caution. Slow movement observed. Avoid lingering near slopes."
+        terrains.append({"name": "Woodland Soil Slopes", "danger_score": round(t2_score, 1), "condition": t2_cond})
+        
+        # Terrain 3
+        t3_score = min(100.0, 8.0 + min(25.0, disp * 1.5) + (20.0 if rainfall > 10.0 else rainfall * 1.2))
+        t3_cond = "Stable. Safe for traverse. Routine monitoring active."
+        if t3_score >= 75.0: t3_cond = "Critical. High danger of imminent slide. Evacuation required."
+        elif t3_score >= 55.0: t3_cond = "Warning. Mud saturation or rock debris detected. Restrict access."
+        elif t3_score >= 30.0: t3_cond = "Caution. Slow movement observed. Avoid lingering near slopes."
+        terrains.append({"name": "Earthen Embankments", "danger_score": round(t3_score, 1), "condition": t3_cond})
+
     # Attach tourist metadata (rich reports)
     tourist_meta = {
         "requested_location": location_name,
         "resolved_location": resolved_location,
+        "city": city,
+        "state": state,
+        "country": country,
         "latitude": float(lat),
         "longitude": float(lon),
         "weather": {
@@ -350,7 +473,10 @@ async def predict_tourist(
             "rainfall_mm": rainfall,
             "description": weather_desc,
             "code": w_code
-        }
+        },
+        "forecast": daily_forecasts,
+        "terrain_category": terrain_category,
+        "terrains": terrains
     }
     result["tourist_meta"] = tourist_meta
 
@@ -363,6 +489,8 @@ async def predict_tourist(
             "latitude": float(lat),
             "longitude": float(lon),
             "weather": tourist_meta["weather"],
+            "forecast": daily_forecasts,
+            "terrains": terrains,
             "sensor_readings": sensors,
             "final_risk_score": result["final_risk_score"],
             "risk_level": result["risk_level"],
