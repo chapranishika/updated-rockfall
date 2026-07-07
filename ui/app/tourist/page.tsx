@@ -24,9 +24,61 @@ import {
   Moon
 } from "lucide-react";
 
+const DEFAULT_YOSEMITE_RESULT = {
+  final_risk_score: 0.38,
+  risk_level: "MEDIUM",
+  confidence: 0.88,
+  recommendation: "Slow geotechnical movement observed. Avoid lingering near steep talus slopes. Exercise high caution.",
+  explainability: {
+    sensor_score: 0.352,
+    image_score: 0.414,
+    divergence: 0.062
+  },
+  sensor_result: {
+    sensor_values: {
+      vibration: 0.024,
+      displacement: 2.10,
+      pore_pressure: 1.15,
+      strain: 0.045
+    }
+  },
+  tourist_meta: {
+    requested_location: "Yosemite Valley",
+    resolved_location: "Yosemite Valley, Mariposa County, California, United States",
+    city: "Yosemite Valley",
+    state: "California",
+    country: "United States",
+    latitude: 37.74557,
+    longitude: -119.53316,
+    weather: {
+      temperature_c: 24.5,
+      humidity_pct: 42.0,
+      wind_speed_kmh: 12.4,
+      rainfall_mm: 0.0,
+      description: "Mainly Clear",
+      code: 1
+    },
+    forecast: [
+      { date: "2026-07-08", temp_max: 26.2, temp_min: 14.5, precipitation_mm: 0.0, description: "Clear Sky", code: 0 },
+      { date: "2026-07-09", temp_max: 27.0, temp_min: 15.0, precipitation_mm: 0.0, description: "Mainly Clear", code: 1 },
+      { date: "2026-07-10", temp_max: 25.4, temp_min: 13.8, precipitation_mm: 1.2, description: "Slight Rain Showers", code: 80 },
+      { date: "2026-07-11", temp_max: 24.0, temp_min: 12.5, precipitation_mm: 0.0, description: "Partly Cloudy", code: 2 },
+      { date: "2026-07-12", temp_max: 23.5, temp_min: 11.8, precipitation_mm: 0.0, description: "Clear Sky", code: 0 },
+      { date: "2026-07-13", temp_max: 24.8, temp_min: 13.0, precipitation_mm: 0.0, description: "Mainly Clear", code: 1 },
+      { date: "2026-07-14", temp_max: 25.5, temp_min: 14.0, precipitation_mm: 0.0, description: "Clear Sky", code: 0 }
+    ],
+    terrain_category: "Mountainous Terrain",
+    terrains: [
+      { name: "Cliffside Hiking Trails", danger_score: 41.5, condition: "Caution. Slow movement observed. Avoid lingering near slopes." },
+      { name: "Talus Scree Slopes", danger_score: 38.0, condition: "Caution. Slow movement observed. Avoid lingering near slopes." },
+      { name: "Mountain Highway Rock-Cuts", danger_score: 34.2, condition: "Caution. Slow movement observed. Avoid lingering near slopes." }
+    ]
+  }
+};
+
 export default function TouristPage() {
   const { theme, toggleTheme } = useTheme();
-  const [locationName, setLocationName] = useState("");
+  const [locationName, setLocationName] = useState("Yosemite Valley");
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [weatherTab, setWeatherTab] = useState<"current" | "forecast">("current");
@@ -34,7 +86,7 @@ export default function TouristPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<any | null>(null);
+  const [result, setResult] = useState<any | null>(DEFAULT_YOSEMITE_RESULT);
   const [showOverlay, setShowOverlay] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
