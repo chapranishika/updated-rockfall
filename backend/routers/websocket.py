@@ -70,7 +70,7 @@ _loop_task   = None
 
 
 async def _broadcast_loop():
-    global _simulator
+    global _simulator, _connections
     while True:
         await asyncio.sleep(5)
         if not _connections:

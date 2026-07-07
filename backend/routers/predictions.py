@@ -208,40 +208,68 @@ async def model_info():
     "/tourist",
     summary="Tourist safety risk prediction with location and live photo",
     description="""
-    Fetches real-time weather data for the requested location name, merges it with 
+    Fetches real-time weather data for the requested location name or coordinates, merges it with 
     current geotechnical sensor telemetry, and runs the multi-modal risk predictor 
-    with their live slope photo.
+    with their live slope photo. Also logs the request details into MongoDB.
     """,
 )
 async def predict_tourist(
     location_name: str = Form(..., description="Name of the tourist location (e.g. Yosemite Valley)"),
+    latitude: Optional[float] = Form(None, description="Optional tourist live GPS latitude"),
+    longitude: Optional[float] = Form(None, description="Optional tourist live GPS longitude"),
     file: Optional[UploadFile] = File(None, description="Optional tourist live photo of the slope"),
 ):
     import urllib.parse
     import httpx
+    from datetime import datetime, timezone
+    from backend.core.database import MongoDBManager
 
-    quoted_name = urllib.parse.quote(location_name.strip())
-    geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={quoted_name}&count=1&language=en&format=json"
+    lat = latitude
+    lon = longitude
+    resolved_location = location_name
 
-    try:
-        async with httpx.AsyncClient() as client:
-            geo_res = await client.get(geo_url)
-            geo_res.raise_for_status()
-            geo_data = geo_res.json()
-    except Exception as e:
-        raise HTTPException(502, detail=f"Geocoding service unavailable: {e}")
+    # If coordinates are provided, skip forward geocoding, but reverse geocode to get a human-readable location
+    if lat is not None and lon is not None:
+        try:
+            # Reverse geocode via OSM Nominatim (needs User-Agent)
+            headers = {"User-Agent": "Rockfall-AI/2.0.0 (contact@rockfall-ai.com)"}
+            async with httpx.AsyncClient() as client:
+                rev_res = await client.get(
+                    f"https://nominatim.openstreetmap.org/reverse?format=json&lat={lat}&lon={lon}",
+                    headers=headers,
+                    timeout=5.0
+                )
+                if rev_res.status_code == 200:
+                    rev_data = rev_res.json()
+                    resolved_location = rev_data.get("display_name", f"GPS: {lat:.5f}, {lon:.5f}")
+                else:
+                    resolved_location = f"GPS: {lat:.5f}, {lon:.5f}"
+        except Exception:
+            resolved_location = f"GPS: {lat:.5f}, {lon:.5f}"
+    else:
+        # Resolve via forward geocoding
+        quoted_name = urllib.parse.quote(location_name.strip())
+        geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={quoted_name}&count=1&language=en&format=json"
 
-    results = geo_data.get("results")
-    if not results:
-        raise HTTPException(404, detail=f"Location '{location_name}' could not be resolved. Please enter a valid city, park, or region name.")
+        try:
+            async with httpx.AsyncClient() as client:
+                geo_res = await client.get(geo_url)
+                geo_res.raise_for_status()
+                geo_data = geo_res.json()
+        except Exception as e:
+            raise HTTPException(502, detail=f"Geocoding service unavailable: {e}")
 
-    loc = results[0]
-    lat = loc["latitude"]
-    lon = loc["longitude"]
-    resolved_location = f"{loc['name']}, {loc.get('admin1', '')}, {loc.get('country', '')}"
+        results = geo_data.get("results")
+        if not results:
+            raise HTTPException(404, detail=f"Location '{location_name}' could not be resolved. Please enter a valid city, park, or region name.")
 
-    # Fetch weather
-    weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,rain,showers,snowfall,weather_code"
+        loc = results[0]
+        lat = loc["latitude"]
+        lon = loc["longitude"]
+        resolved_location = f"{loc['name']}, {loc.get('admin1', '')}, {loc.get('country', '')}"
+
+    # Fetch weather (include humidity, wind speed)
+    weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,rain,showers,snowfall,wind_speed_10m,weather_code"
     try:
         async with httpx.AsyncClient() as client:
             weather_res = await client.get(weather_url)
@@ -255,6 +283,8 @@ async def predict_tourist(
         raise HTTPException(502, detail="Weather data parse error: missing 'current' field")
 
     temperature = float(current.get("temperature_2m", 20.0))
+    humidity = float(current.get("relative_humidity_2m", 50.0))
+    wind_speed = float(current.get("wind_speed_10m", 0.0))
     rain = float(current.get("rain", 0.0))
     showers = float(current.get("showers", 0.0))
     snowfall = float(current.get("snowfall", 0.0))
@@ -307,18 +337,41 @@ async def predict_tourist(
 
     result = _reg().predict_fused(sensors, img_bytes)
 
-    # Attach tourist metadata
-    result["tourist_meta"] = {
+    # Attach tourist metadata (rich reports)
+    tourist_meta = {
         "requested_location": location_name,
         "resolved_location": resolved_location,
-        "latitude": lat,
-        "longitude": lon,
+        "latitude": float(lat),
+        "longitude": float(lon),
         "weather": {
             "temperature_c": temperature,
+            "humidity_pct": humidity,
+            "wind_speed_kmh": wind_speed,
             "rainfall_mm": rainfall,
             "description": weather_desc,
             "code": w_code
         }
     }
+    result["tourist_meta"] = tourist_meta
+
+    # Log record to MongoDB
+    try:
+        record = {
+            "timestamp": datetime.now(timezone.utc),
+            "location_name": location_name,
+            "resolved_location": resolved_location,
+            "latitude": float(lat),
+            "longitude": float(lon),
+            "weather": tourist_meta["weather"],
+            "sensor_readings": sensors,
+            "final_risk_score": result["final_risk_score"],
+            "risk_level": result["risk_level"],
+            "confidence": result["confidence"],
+            "has_image": img_bytes is not None
+        }
+        await MongoDBManager.get().save_tourist_record(record)
+    except Exception as e:
+        log.error(f"Error saving tourist log to MongoDB: {e}")
+
     return JSONResponse(content=result)
 

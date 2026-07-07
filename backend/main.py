@@ -30,15 +30,23 @@ log = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    log.info("🪨 Rockfall-AI starting — loading models...")
+    log.info("🪨 Rockfall-AI starting — loading models & connecting database...")
     try:
         from backend.core.model_registry import ModelRegistry
         reg = ModelRegistry.get()
         log.info(f"✅ Models ready: {reg.ready}")
     except Exception as e:
         log.error(f"⚠️  Model load failed (app still starts): {e}")
+
+    try:
+        from backend.core.database import MongoDBManager
+        db_mgr = MongoDBManager.get()
+        log.info(f"💾 MongoDB status: enabled={db_mgr.enabled}")
+    except Exception as e:
+        log.error(f"⚠️  MongoDB initialization failed: {e}")
     yield
     log.info("🛑 Shutting down")
+
 
 
 # ── App ───────────────────────────────────────────────────────────────────────

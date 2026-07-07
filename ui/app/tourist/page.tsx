@@ -1,10 +1,12 @@
 "use client";
 import React, { useState, useRef } from "react";
 import { LivePill, RiskBar, rc, rb, rd, Card, CardSm, CardLabel } from "@/components/ui/index";
-import { Upload, Search, MapPin, CloudRain, Thermometer, AlertTriangle, ShieldCheck, RefreshCw, Eye } from "lucide-react";
+import { Upload, Search, MapPin, CloudRain, Thermometer, AlertTriangle, ShieldCheck, RefreshCw, Eye, Navigation, Wind, Droplets } from "lucide-react";
 
 export default function TouristPage() {
   const [locationName, setLocationName] = useState("");
+  const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [gpsLoading, setGpsLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -38,6 +40,29 @@ export default function TouristPage() {
     fileInputRef.current?.click();
   };
 
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Geolocation is not supported by your browser.");
+      return;
+    }
+    setGpsLoading(true);
+    setError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        setCoords({ latitude: lat, longitude: lon });
+        setLocationName(`GPS: ${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+        setGpsLoading(false);
+      },
+      (err) => {
+        setError(`Failed to retrieve live location: ${err.message}`);
+        setGpsLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!locationName.trim()) {
@@ -51,6 +76,12 @@ export default function TouristPage() {
 
     const formData = new FormData();
     formData.append("location_name", locationName);
+
+    if (coords && locationName.startsWith("GPS:")) {
+      formData.append("latitude", coords.latitude.toString());
+      formData.append("longitude", coords.longitude.toString());
+    }
+
     if (file) {
       formData.append("file", file);
     }
@@ -82,11 +113,13 @@ export default function TouristPage() {
     setImagePreview(null);
     setResult(null);
     setError(null);
+    setCoords(null);
   };
 
   const level = (result?.risk_level ?? "LOW").toUpperCase();
   const pct = Math.round((result?.final_risk_score ?? 0) * 100);
   const color = rc(level);
+
 
   return (
     <div className="p-5" style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 800, margin: "0 auto" }}>
@@ -113,20 +146,41 @@ export default function TouristPage() {
             <label style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--txt3)" }}>
               1. Where are you currently?
             </label>
-            <div style={{ position: "relative" }}>
-              <Search size={16} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--txt3)" }} />
-              <input
-                type="text"
-                placeholder="e.g. Yosemite Valley, Shimla, Mount Rainier..."
-                value={locationName}
-                onChange={(e) => setLocationName(e.target.value)}
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <div style={{ position: "relative", flex: 1 }}>
+                <Search size={16} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "var(--txt3)" }} />
+                <input
+                  type="text"
+                  placeholder="e.g. Yosemite Valley, Shimla, Mount Rainier..."
+                  value={locationName}
+                  onChange={(e) => {
+                    setLocationName(e.target.value);
+                    if (coords) setCoords(null);
+                  }}
+                  style={{
+                    width: "100%", padding: "12px 14px 12px 40px", borderRadius: 10,
+                    background: "var(--bg2)", border: "1px solid var(--bdr)",
+                    color: "var(--txt)", fontSize: 13, outline: "none",
+                    transition: "border-color .2s"
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleGetLocation}
+                disabled={gpsLoading}
                 style={{
-                  width: "100%", padding: "12px 14px 12px 40px", borderRadius: 10,
-                  background: "var(--bg2)", border: "1px solid var(--bdr)",
-                  color: "var(--txt)", fontSize: 13, outline: "none",
-                  transition: "border-color .2s"
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "12px 16px", borderRadius: 10, border: "1px solid var(--bdr)",
+                  background: "var(--bg2)", color: "var(--txt2)", fontSize: 13, fontWeight: 500,
+                  cursor: "pointer", transition: "all .2s"
                 }}
-              />
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--acc)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--bdr)"; }}
+              >
+                <Navigation size={14} className={gpsLoading ? "animate-spin" : ""} style={{ color: coords ? "var(--acc)" : "inherit" }} />
+                <span>{gpsLoading ? "GPS..." : "Locate Me"}</span>
+              </button>
             </div>
           </div>
 
@@ -290,17 +344,29 @@ export default function TouristPage() {
                   </p>
                 </div>
               </div>
-              <div style={{ display: "flex", gap: 16, marginTop: 4 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px 14px", marginTop: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <Thermometer size={14} style={{ color: "var(--txt3)" }} />
                   <span style={{ fontSize: 12, color: "var(--txt2)" }}>
                     Temp: <strong>{result.tourist_meta?.weather?.temperature_c}°C</strong>
                   </span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <CloudRain size={14} style={{ color: "var(--txt3)" }} />
                   <span style={{ fontSize: 12, color: "var(--txt2)" }}>
                     Rain: <strong>{result.tourist_meta?.weather?.rainfall_mm} mm</strong>
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <Droplets size={14} style={{ color: "var(--txt3)" }} />
+                  <span style={{ fontSize: 12, color: "var(--txt2)" }}>
+                    Humidity: <strong>{result.tourist_meta?.weather?.humidity_pct}%</strong>
+                  </span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <Wind size={14} style={{ color: "var(--txt3)" }} />
+                  <span style={{ fontSize: 12, color: "var(--txt2)" }}>
+                    Wind: <strong>{result.tourist_meta?.weather?.wind_speed_kmh} km/h</strong>
                   </span>
                 </div>
               </div>

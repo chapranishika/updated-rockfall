@@ -24,3 +24,8 @@ albumentations==1.4.8
 # Utils
 python-dotenv==1.0.1
 psutil==5.9.8
+
+# Database
+motor==3.4.0
+pymongo==4.7.2
+
