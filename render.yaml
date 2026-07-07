@@ -5,12 +5,11 @@ services:
     env: docker
     dockerfilePath: Dockerfile.backend
     dockerContext: .
-    plan: free
     envVars:
       - key: PORT
-        value: 8000
+        value: "8000"
       - key: MONGO_HOST
-        value: "localhost" # Fallback, user can edit this to point to MongoDB Atlas
+        value: "localhost"
       - key: MONGO_PORT
         value: "27017"
       - key: MONGO_DB
@@ -26,9 +25,8 @@ services:
     env: docker
     dockerfilePath: Dockerfile.ui
     dockerContext: .
-    plan: free
     envVars:
       - key: PORT
-        value: 3000
-    dockerBuildArgs:
-      NEXT_PUBLIC_API_URL: https://rockfall-backend.onrender.com
+        value: "3000"
+      - key: NEXT_PUBLIC_API_URL
+        value: "https://rockfall-backend.onrender.com"
