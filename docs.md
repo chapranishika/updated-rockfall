@@ -8,7 +8,7 @@ Welcome to the official technical documentation for **Rockfall-AI** — a real-t
 
 The platform uses a distributed microservice-inspired architecture, combining a client-side dashboard with an AI inference server and a document store.
 
-![Rockfall-AI System Architecture](architecture_diagram.jpg)
+![Rockfall-AI System Architecture](architecture_diagram.png)
 
 ### Core Components
 1. **Next.js Frontend (Port 3000)**: Serves a high-quality, theme-switched (Light/Dark mode) dashboard with separate view profiles for **Workers** (full sensor telemetry and heatmap graphs) and **Tourists** (simplified real-time slope hazard geocoding).
