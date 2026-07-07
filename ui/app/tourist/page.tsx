@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef } from "react";
 import { LivePill, RiskBar, rc, rb, rd, Card, CardSm, CardLabel } from "@/components/ui/index";
+import { useTheme } from "@/lib/ThemeContext";
 import { 
   UploadCloud, 
   Search, 
@@ -18,10 +19,13 @@ import {
   Activity,
   CheckCircle2,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Sun,
+  Moon
 } from "lucide-react";
 
 export default function TouristPage() {
+  const { theme, toggleTheme } = useTheme();
   const [locationName, setLocationName] = useState("");
   const [coords, setCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -39,6 +43,7 @@ export default function TouristPage() {
   const [hoverSubmit, setHoverSubmit] = useState(false);
   const [hoverUploadZone, setHoverUploadZone] = useState(false);
   const [hoverReset, setHoverReset] = useState(false);
+  const [hoverThemeToggle, setHoverThemeToggle] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -147,13 +152,13 @@ export default function TouristPage() {
 
   // Styled glassmorphism panel styles
   const glassStyle: React.CSSProperties = {
-    background: "rgba(18, 22, 37, 0.45)",
+    background: theme === "dark" ? "rgba(18, 22, 37, 0.45)" : "rgba(255, 255, 255, 0.7)",
     backdropFilter: "blur(16px)",
     WebkitBackdropFilter: "blur(16px)",
-    border: "1px solid rgba(255, 255, 255, 0.05)",
+    border: theme === "dark" ? "1px solid rgba(255, 255, 255, 0.05)" : "1px solid rgba(0, 0, 0, 0.06)",
     borderRadius: 16,
     padding: 24,
-    boxShadow: "0 8px 32px 0 rgba(0, 0, 0, 0.3)",
+    boxShadow: theme === "dark" ? "0 8px 32px 0 rgba(0, 0, 0, 0.3)" : "0 8px 32px 0 rgba(31, 38, 135, 0.04)",
     display: "flex",
     flexDirection: "column",
     gap: 12
@@ -175,7 +180,27 @@ export default function TouristPage() {
             Real-time multi-modal slope stability diagnosis for local tourist regions.
           </p>
         </div>
-        <LivePill connected={!error} />
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <LivePill connected={!error} />
+          <button
+            type="button"
+            onClick={toggleTheme}
+            onMouseEnter={() => setHoverThemeToggle(true)}
+            onMouseLeave={() => setHoverThemeToggle(false)}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 36, height: 36, borderRadius: "50%",
+              border: "1px solid var(--bdr2)",
+              background: hoverThemeToggle ? "var(--bg2)" : "rgba(0,0,0,0.03)",
+              color: "var(--txt)",
+              cursor: "pointer", transition: "all 0.2s ease",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+            }}
+            title={`Switch to ${theme === "dark" ? "Light" : "Dark"} Mode`}
+          >
+            {theme === "dark" ? <Sun size={16} style={{ color: "#eab308" }} /> : <Moon size={16} style={{ color: "#7c3aed" }} />}
+          </button>
+        </div>
       </div>
 
       {!result && (
@@ -183,7 +208,7 @@ export default function TouristPage() {
           
           {/* Location input panel */}
           <div style={glassStyle}>
-            <label style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".1em", color: "var(--txt3)" }}>
+            <label style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".15em", color: "var(--acc2)" }}>
               Current Location Reference
             </label>
             <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 4 }}>
@@ -199,12 +224,12 @@ export default function TouristPage() {
                   }}
                   style={{
                     width: "100%", padding: "14px 14px 14px 42px", borderRadius: 10,
-                    background: "rgba(5, 7, 13, 0.6)", border: "1px solid rgba(255,255,255,0.06)",
+                    background: "var(--bg2)", border: "1px solid var(--bdr)",
                     color: "var(--txt)", fontSize: 13, outline: "none",
                     transition: "all .2s ease",
                   }}
-                  onFocus={(e) => { e.currentTarget.style.borderColor = "var(--acc)"; e.currentTarget.style.boxShadow = "0 0 10px rgba(79, 142, 247, 0.15)"; }}
-                  onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)"; e.currentTarget.style.boxShadow = "none"; }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = "var(--acc)"; e.currentTarget.style.boxShadow = "0 0 10px rgba(6, 182, 212, 0.15)"; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = "var(--bdr)"; e.currentTarget.style.boxShadow = "none"; }}
                 />
               </div>
               <button
@@ -216,9 +241,9 @@ export default function TouristPage() {
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
                   padding: "14px 18px", borderRadius: 10, 
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  background: hoverLocate ? "rgba(255,255,255,0.08)" : "rgba(18, 22, 37, 0.6)",
-                  color: coords ? "var(--acc2)" : "var(--txt2)", 
+                  border: "1px solid var(--bdr2)",
+                  background: hoverLocate ? "var(--bg3)" : "var(--bg2)",
+                  color: coords ? "var(--acc)" : "var(--txt2)", 
                   fontSize: 13, fontWeight: 600,
                   cursor: "pointer", transition: "all .2s ease"
                 }}
@@ -231,7 +256,7 @@ export default function TouristPage() {
 
           {/* Photo upload panel */}
           <div style={glassStyle}>
-            <label style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".1em", color: "var(--txt3)" }}>
+            <label style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".15em", color: "var(--acc2)" }}>
               Slope Observation Photo
             </label>
             
@@ -240,10 +265,10 @@ export default function TouristPage() {
               onMouseEnter={() => setHoverUploadZone(true)}
               onMouseLeave={() => setHoverUploadZone(false)}
               style={{
-                border: hoverUploadZone ? "1px dashed var(--acc)" : "1px dashed rgba(255,255,255,0.12)", 
+                border: hoverUploadZone ? "1px dashed var(--acc)" : "1px dashed var(--bdr2)", 
                 borderRadius: 12, padding: "32px 20px",
                 textAlign: "center", cursor: "pointer", 
-                background: hoverUploadZone ? "rgba(79, 142, 247, 0.04)" : "rgba(5, 7, 13, 0.4)",
+                background: hoverUploadZone ? "var(--acc-bg)" : "var(--bg2)",
                 transition: "all .2s ease",
                 display: "flex", flexDirection: "column", alignItems: "center", gap: 10
               }}
@@ -303,11 +328,11 @@ export default function TouristPage() {
             style={{
               padding: "16px 24px", borderRadius: 12, border: "none",
               background: loading 
-                ? "rgba(255,255,255,0.05)" 
+                ? "var(--bg3)" 
                 : hoverSubmit 
-                  ? "linear-gradient(135deg, #3b82f6, #4f46e5)" 
-                  : "linear-gradient(135deg, #2563eb, #3b82f6)",
-              boxShadow: hoverSubmit && !loading ? "0 4px 20px rgba(37, 99, 235, 0.4)" : "none",
+                  ? "linear-gradient(135deg, var(--acc), var(--acc2))" 
+                  : "linear-gradient(135deg, var(--acc2), var(--acc))",
+              boxShadow: hoverSubmit && !loading ? "0 4px 20px rgba(124, 58, 237, 0.35)" : "none",
               color: loading ? "var(--txt3)" : "white", 
               fontWeight: 700, fontSize: 14, 
               cursor: loading ? "not-allowed" : "pointer",
@@ -336,10 +361,13 @@ export default function TouristPage() {
           
           {/* Safety Summary Hero Dashboard Card */}
           <div style={{
-            background: "linear-gradient(135deg, rgba(18, 22, 37, 0.85), rgba(12, 15, 26, 0.95))",
-            border: `1px solid rgba(255, 255, 255, 0.05)`, borderRadius: 20, padding: 32,
+            background: theme === "dark" 
+              ? "linear-gradient(135deg, rgba(18, 22, 37, 0.85), rgba(12, 15, 26, 0.95))" 
+              : "linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.95))",
+            border: theme === "dark" ? "1px solid rgba(255, 255, 255, 0.05)" : "1px solid rgba(0, 0, 0, 0.06)", 
+            borderRadius: 20, padding: 32,
             position: "relative", overflow: "hidden",
-            boxShadow: "0 10px 40px rgba(0,0,0,0.5)"
+            boxShadow: theme === "dark" ? "0 10px 40px rgba(0,0,0,0.5)" : "0 10px 40px rgba(31, 38, 135, 0.05)"
           }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: color, borderRadius: "20px 20px 0 0" }} />
             
