@@ -1,3 +1,13 @@
+---
+title: Rockfall Backend
+emoji: 🛡️
+colorFrom: purple
+colorTo: cyan
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Rockfall-AI: Multi-Modal Geophysical Safety & Alert Platform
 
 A real-time, microservice-inspired geophysical monitoring platform that combines deep learning computer vision (U-Net) and tabular anomaly detection (XGBoost) to evaluate rockfall hazards and ensure tourist and worker safety.
