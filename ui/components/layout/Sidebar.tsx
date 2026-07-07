@@ -1,20 +1,30 @@
 "use client";
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMode } from "@/lib/ModeContext";
+import { 
+  LayoutDashboard, 
+  ShieldCheck, 
+  Activity, 
+  Map, 
+  Scan, 
+  Bell, 
+  BarChart3 
+} from "lucide-react";
 
 const NAV_WORKER = [
-  { href: "/",         icon: "⬡",  label: "Dashboard",     group: "overview"   },
-  { href: "/tourist",  icon: "🛡️", label: "Safety Status", group: "overview"   },
-  { href: "/sensors",  icon: "📡", label: "Sensors",       group: "monitoring" },
-  { href: "/heatmap",  icon: "🗺️", label: "Heatmap",       group: "monitoring" },
-  { href: "/analysis", icon: "🔬", label: "Image Analysis", group: "monitoring" },
-  { href: "/alerts",   icon: "🔔", label: "Alerts",        group: "monitoring" },
-  { href: "/reports",  icon: "📊", label: "Reports",       group: "monitoring" },
+  { href: "/",         icon: LayoutDashboard, label: "Dashboard",     group: "overview"   },
+  { href: "/tourist",  icon: ShieldCheck,     label: "Safety Status", group: "overview"   },
+  { href: "/sensors",  icon: Activity,        label: "Sensors",       group: "monitoring" },
+  { href: "/heatmap",  icon: Map,             label: "Heatmap",       group: "monitoring" },
+  { href: "/analysis", icon: Scan,            label: "Image Analysis", group: "monitoring" },
+  { href: "/alerts",   icon: Bell,            label: "Alerts",        group: "monitoring" },
+  { href: "/reports",  icon: BarChart3,       label: "Reports",       group: "monitoring" },
 ];
 
 const NAV_TOURIST = [
-  { href: "/tourist",  icon: "🛡️", label: "Safety Status", group: "overview" },
+  { href: "/tourist",  icon: ShieldCheck,     label: "Safety Status", group: "overview" },
 ];
 
 export default function Sidebar() {
@@ -52,7 +62,7 @@ export default function Sidebar() {
               style={{ color: "var(--txt3)", letterSpacing: ".1em" }}>
               {group}
             </p>
-            {NAV.filter(n => n.group === group).map(({ href, icon, label }) => {
+            {NAV.filter(n => n.group === group).map(({ href, icon: Icon, label }) => {
               const on = active(href);
               return (
                 <Link key={href} href={href}
@@ -62,7 +72,9 @@ export default function Sidebar() {
                     color:      on ? "var(--acc2)"   : "var(--txt2)",
                     border:     on ? "1px solid #4f8ef725" : "1px solid transparent",
                   }}>
-                  <span style={{ fontSize: 14, width: 16, textAlign: "center" }}>{icon}</span>
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 16 }}>
+                    <Icon size={14} />
+                  </span>
                   {label}
                 </Link>
               );

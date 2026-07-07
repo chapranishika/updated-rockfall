@@ -96,7 +96,7 @@ export default function Dashboard() {
             <Metric label="Final score"   value={`${pct}%`}      accent={c}          color={c} />
             <Metric label="Sensor score"  value={`${Math.round((demo?.explainability?.sensor_score ?? 0)*100)}%`} accent="var(--acc)" />
             <Metric label="Confidence"    value={`${Math.round((demo?.confidence ?? 0)*100)}%`} accent="var(--lo)" color="var(--lo)" />
-            <Metric label="Alert"         value={demo?.alert ? "🚨 Active" : "✅ Clear"} accent={demo?.alert ? "var(--hi)" : "var(--lo)"} color={demo?.alert ? "var(--hi)" : "var(--lo)"} />
+            <Metric label="Alert"         value={demo?.alert ? "Active" : "Clear"} accent={demo?.alert ? "var(--hi)" : "var(--lo)"} color={demo?.alert ? "var(--hi)" : "var(--lo)"} />
           </div>
           <Card>
             <CardLabel text="Risk trend — last 60 readings" />

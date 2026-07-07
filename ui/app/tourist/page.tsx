@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef } from "react";
 import { LivePill, RiskBar, rc, rb, rd, Card, CardSm, CardLabel } from "@/components/ui/index";
-import { Upload, Search, MapPin, CloudRain, Thermometer, AlertTriangle, ShieldCheck, RefreshCw, Eye, Navigation, Wind, Droplets } from "lucide-react";
+import { Upload, Search, MapPin, CloudRain, Thermometer, AlertTriangle, ShieldCheck, RefreshCw, Eye, Navigation, Wind, Droplets, Compass } from "lucide-react";
 
 export default function TouristPage() {
   const [locationName, setLocationName] = useState("");
@@ -127,11 +127,12 @@ export default function TouristPage() {
       {/* Title */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-.5px", color: "var(--txt)" }}>
-            🌄 Tourist Slope Safety Check
+          <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-.5px", color: "var(--txt)", display: "flex", alignItems: "center", gap: 8 }}>
+            <Compass size={24} style={{ color: "var(--acc)" }} />
+            <span>Tourist Slope Safety Portal</span>
           </h1>
           <p style={{ fontSize: 13, color: "var(--txt3)", marginTop: 4 }}>
-            Enter your location and upload a live photo of nearby slopes to get a real-time hazard evaluation.
+            Enter your location coordinates or name and upload a live photo of nearby slopes for safety evaluation.
           </p>
         </div>
         <LivePill connected={!error} />
@@ -294,18 +295,21 @@ export default function TouristPage() {
 
             <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
               {result.tourist_meta?.city && result.tourist_meta.city !== "Unknown City" && (
-                <span style={{ background: "var(--bg3)", color: "var(--txt2)", fontSize: 10, padding: "2px 8px", borderRadius: 4, border: "1px solid var(--bdr)" }}>
-                  🌆 {result.tourist_meta.city}
+                <span style={{ background: "var(--bg3)", color: "var(--txt2)", fontSize: 10, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--bdr)", display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ opacity: 0.6 }}>CITY:</span>
+                  <strong>{result.tourist_meta.city}</strong>
                 </span>
               )}
               {result.tourist_meta?.state && result.tourist_meta.state !== "Unknown State" && (
-                <span style={{ background: "var(--bg3)", color: "var(--txt2)", fontSize: 10, padding: "2px 8px", borderRadius: 4, border: "1px solid var(--bdr)" }}>
-                  📍 {result.tourist_meta.state}
+                <span style={{ background: "var(--bg3)", color: "var(--txt2)", fontSize: 10, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--bdr)", display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ opacity: 0.6 }}>STATE:</span>
+                  <strong>{result.tourist_meta.state}</strong>
                 </span>
               )}
               {result.tourist_meta?.country && result.tourist_meta.country !== "Unknown Country" && (
-                <span style={{ background: "var(--bg3)", color: "var(--txt2)", fontSize: 10, padding: "2px 8px", borderRadius: 4, border: "1px solid var(--bdr)" }}>
-                  🏳️ {result.tourist_meta.country}
+                <span style={{ background: "var(--bg3)", color: "var(--txt2)", fontSize: 10, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--bdr)", display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ opacity: 0.6 }}>COUNTRY:</span>
+                  <strong>{result.tourist_meta.country}</strong>
                 </span>
               )}
             </div>
@@ -434,9 +438,15 @@ export default function TouristPage() {
                           <strong>{Math.round(day.temp_max)}°</strong> / {Math.round(day.temp_min)}°
                         </span>
                         {day.precipitation_mm > 0 ? (
-                          <span style={{ color: "#3b82f6", fontSize: 10, width: "50px", textAlign: "right" }}>🌧️ {day.precipitation_mm}mm</span>
+                          <span style={{ color: "#3b82f6", fontSize: 10, width: "55px", textAlign: "right", display: "inline-flex", alignItems: "center", gap: 3, justifyContent: "flex-end" }}>
+                            <CloudRain size={10} />
+                            <span>{day.precipitation_mm}mm</span>
+                          </span>
                         ) : (
-                          <span style={{ color: "var(--txt3)", fontSize: 10, width: "50px", textAlign: "right" }}>☀️ 0mm</span>
+                          <span style={{ color: "var(--txt3)", fontSize: 10, width: "55px", textAlign: "right", display: "inline-flex", alignItems: "center", gap: 3, justifyContent: "flex-end" }}>
+                            <Thermometer size={10} />
+                            <span>0mm</span>
+                          </span>
                         )}
                       </div>
                     );
@@ -532,7 +542,10 @@ export default function TouristPage() {
                   return (
                     <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 6, paddingBottom: idx < result.tourist_meta.terrains.length - 1 ? 10 : 0, borderBottom: idx < result.tourist_meta.terrains.length - 1 ? "1px solid var(--bdr)" : "none" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, fontWeight: 600 }}>
-                        <span style={{ color: "var(--txt)" }}>🏞️ {t.name}</span>
+                        <span style={{ color: "var(--txt)", display: "flex", alignItems: "center", gap: 6 }}>
+                          <MapPin size={12} style={{ color: barColor, opacity: 0.8 }} />
+                          <span>{t.name}</span>
+                        </span>
                         <span style={{ color: barColor, background: `${barColor}15`, padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>{t.danger_score}% Danger</span>
                       </div>
                       <div style={{ width: "100%", height: 6, background: "var(--bg3)", borderRadius: 3, overflow: "hidden" }}>

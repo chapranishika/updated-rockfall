@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { UploadCloud } from "lucide-react";
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 export const RISK_COLORS: Record<string,string> = {
@@ -222,12 +223,14 @@ export function DropZone({
         <img src={preview} alt="preview" style={{ maxHeight:120, objectFit:"contain", borderRadius:8, width:"100%" }}/>
       ) : (
         <>
-          <p style={{ fontSize:22, marginBottom:6 }}>🛸</p>
-          <p style={{ fontSize:13, color:"var(--txt)", fontWeight:500, marginBottom:4 }}>{label}</p>
-          <p style={{ fontSize:10, color:"var(--txt3)" }}>{sub}</p>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
+            <UploadCloud size={28} style={{ color: "var(--txt3)" }} />
+          </div>
+          <p style={{ fontSize: 13, color: "var(--txt)", fontWeight: 500, marginBottom: 4 }}>{label}</p>
+          <p style={{ fontSize: 10, color: "var(--txt3)" }}>{sub}</p>
         </>
       )}
-      {fileName && <p style={{ fontSize:10, color:"var(--acc2)", marginTop:6 }}>📎 {fileName}</p>}
+      {fileName && <p style={{ fontSize: 10, color: "var(--acc2)", marginTop: 6 }}>{fileName}</p>}
       <input id="dz-input" type="file" accept="image/*" style={{ display:"none" }}
         onChange={e => { const f=e.target.files?.[0]; if(f) onFile(f); }}/>
     </div>
