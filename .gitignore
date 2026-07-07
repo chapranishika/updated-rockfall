@@ -29,14 +29,16 @@ ui/.env.local
 *.env
 
 # Drone imagery — too large for git (use DVC or share separately)
+data/drone/
 ml/data/patch_1/
 ml/data/patch_1011/
 ml/data/Masks/
 ml/data/BinaryMasks/
 ml/data/DroneImages/
 
-# Trained weights — KEEP these in git so repo is immediately runnable
+# Trained weights — KEEP production model in git so repo is immediately runnable
 # ml/saved_models/   ← intentionally NOT ignored
+ml/saved_models/segmentation_v2/best_checkpoint.pt
 
 # Docker
 .docker/

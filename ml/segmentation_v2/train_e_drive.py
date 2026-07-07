@@ -156,16 +156,17 @@ def save_samples(model,pairs,size,device,n=8):
 def train(size=IMG_SIZE,batch=BATCH,lr=LR,p1=P1_EPOCHS,p2=P2_EPOCHS,enc_weights="imagenet",patience=PATIENCE):
     t0=time.time(); device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(42); random.seed(42); np.random.seed(42)
-    print("\n"+"═"*62)
-    print("  Rockfall-AI  ─  U-Net  ─  Real Drone Dataset (PRIMARY)")
-    print("═"*62)
+    print("\n"+"="*62)
+    print("  Rockfall-AI  |  U-Net  |  Real Drone Dataset (PRIMARY)")
+    print("="*62)
     print(f"  device={device}  size={size}px  batch={batch}  lr={lr}")
     print(f"  p1={p1}(frozen)  p2={p2}(finetune)  enc={enc_weights}")
 
     pairs=find_pairs(); tr_p,val_p,te_p=stratified_split(pairs)
-    tr_dl=torch.utils.data.DataLoader(RockfallDS(tr_p, size,True), batch_size=batch,shuffle=True, num_workers=4,pin_memory=device.type=="cuda")
-    vl_dl=torch.utils.data.DataLoader(RockfallDS(val_p,size,False),batch_size=batch*2,shuffle=False,num_workers=4)
-    te_dl=torch.utils.data.DataLoader(RockfallDS(te_p, size,False),batch_size=batch*2,shuffle=False,num_workers=4)
+    nw = 0 if sys.platform == "win32" else 4
+    tr_dl=torch.utils.data.DataLoader(RockfallDS(tr_p, size,True), batch_size=batch,shuffle=True, num_workers=nw,pin_memory=device.type=="cuda")
+    vl_dl=torch.utils.data.DataLoader(RockfallDS(val_p,size,False),batch_size=batch*2,shuffle=False,num_workers=nw)
+    te_dl=torch.utils.data.DataLoader(RockfallDS(te_p, size,False),batch_size=batch*2,shuffle=False,num_workers=nw)
     print(f"  batches: train={len(tr_dl)} val={len(vl_dl)} test={len(te_dl)}")
 
     model=build_unet(enc_weights,device); crit=Loss(POS_WEIGHT).to(device)
@@ -180,17 +181,17 @@ def train(size=IMG_SIZE,batch=BATCH,lr=LR,p1=P1_EPOCHS,p2=P2_EPOCHS,enc_weights=
             ls.append(loss.item()); del imgs,msks,loss; gc.collect()
         return float(np.mean(ls))
 
-    print(f"\n── Phase 1: Frozen encoder ({p1} epochs) ──────────────────")
+    print(f"\n-- Phase 1: Frozen encoder ({p1} epochs) ------------------")
     for p in model.encoder.parameters(): p.requires_grad=False
     o1=torch.optim.AdamW(filter(lambda p:p.requires_grad,model.parameters()),lr=lr*2,weight_decay=1e-4)
     for ep in range(1,p1+1):
         tl=do_train(o1); d,u,prec,rec=metrics(model,vl_dl,device)
-        s=" ★" if d>best_dice else ""
+        s=" *" if d>best_dice else ""
         print(f"  P1 {ep:02d}/{p1}  tr={tl:.4f}  Dice={d:.4f}  IoU={u:.4f}  P={prec:.3f}  R={rec:.3f}{s}",flush=True)
         hist.append({"ph":1,"ep":ep,"tr":round(tl,4),"vd":round(d,4),"vi":round(u,4)})
         if d>best_dice: best_dice=d; best_state={k:v.clone() for k,v in model.state_dict().items()}
 
-    print(f"\n── Phase 2: Full fine-tune ({p2} epochs, diff LR) ──────────")
+    print(f"\n-- Phase 2: Full fine-tune ({p2} epochs, diff LR) ----------")
     for p in model.encoder.parameters(): p.requires_grad=True
     ep_=[p for n,p in model.named_parameters() if "encoder" in n]
     dp_=[p for n,p in model.named_parameters() if "encoder" not in n]
@@ -198,7 +199,7 @@ def train(size=IMG_SIZE,batch=BATCH,lr=LR,p1=P1_EPOCHS,p2=P2_EPOCHS,enc_weights=
     sch=torch.optim.lr_scheduler.CosineAnnealingLR(o2,T_max=p2,eta_min=lr*0.005); pat=0
     for ep in range(1,p2+1):
         tl=do_train(o2); d,u,prec,rec=metrics(model,vl_dl,device); sch.step()
-        s=" ★" if d>best_dice else ""
+        s=" *" if d>best_dice else ""
         print(f"  P2 {ep:02d}/{p2}  tr={tl:.4f}  Dice={d:.4f}  IoU={u:.4f}  P={prec:.3f}  R={rec:.3f}{s}",flush=True)
         hist.append({"ph":2,"ep":p1+ep,"tr":round(tl,4),"vd":round(d,4),"vi":round(u,4)})
         if d>best_dice:
@@ -211,12 +212,12 @@ def train(size=IMG_SIZE,batch=BATCH,lr=LR,p1=P1_EPOCHS,p2=P2_EPOCHS,enc_weights=
     model.load_state_dict(best_state); model.eval()
     td,ti,tp,tr_r=metrics(model,te_dl,device); tf1=2*tp*tr_r/(tp+tr_r+1e-6); elapsed=time.time()-t0
 
-    print(f"\n{'═'*62}")
+    print(f"\n{'='*62}")
     print(f"  TEST RESULTS")
     for name,val in [("Dice",td),("IoU",ti),("Precision",tp),("Recall",tr_r),("F1",tf1)]:
         print(f"  {name:<12} {val:.4f}")
     print(f"  Time         {elapsed/60:.1f} min")
-    print(f"{'═'*62}")
+    print(f"{'='*62}")
 
     torch.save(model.state_dict(),MODEL_PATH)
     import pandas as pd
@@ -235,7 +236,51 @@ def train(size=IMG_SIZE,batch=BATCH,lr=LR,p1=P1_EPOCHS,p2=P2_EPOCHS,enc_weights=
     print(f"\n  Model  → {MODEL_PATH}\n  Meta   → {META_PATH}")
     save_samples(model,te_p,size,device,n=8)
     print(f"  Samples→ {SAMPLE_DIR}")
-    print(f"\n✅  Done in {elapsed/60:.1f} min\n")
+    print(f"\nDone in {elapsed/60:.1f} min\n")
+    return meta
+
+def finalize_checkpoint(size=IMG_SIZE, batch=BATCH, enc_weights="imagenet", ckpt=SAVE_DIR/"best_checkpoint.pt"):
+    """Export best_checkpoint.pt as the production model after interrupted training."""
+    if not ckpt.exists():
+        raise FileNotFoundError(f"No checkpoint at {ckpt}")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print("\n" + "=" * 62)
+    print("  Finalizing from checkpoint")
+    print("=" * 62)
+    pairs = find_pairs(); tr_p, val_p, te_p = stratified_split(pairs)
+    nw = 0 if sys.platform == "win32" else 4
+    te_dl = torch.utils.data.DataLoader(RockfallDS(te_p, size, False), batch_size=batch * 2, shuffle=False, num_workers=nw)
+    model = build_unet(enc_weights, device)
+    model.load_state_dict(torch.load(ckpt, map_location=device))
+    model.eval()
+    td, ti, tp, tr_r = metrics(model, te_dl, device)
+    tf1 = 2 * tp * tr_r / (tp + tr_r + 1e-6)
+    print(f"\n{'=' * 62}")
+    print("  TEST RESULTS (from checkpoint)")
+    for name, val in [("Dice", td), ("IoU", ti), ("Precision", tp), ("Recall", tr_r), ("F1", tf1)]:
+        print(f"  {name:<12} {val:.4f}")
+    print(f"{'=' * 62}")
+    torch.save(model.state_dict(), MODEL_PATH)
+    import pandas as pd
+    meta = {
+        "model": "U-Net+ResNet34 (PRIMARY — real drone)",
+        "encoder": "resnet34", "encoder_weights": enc_weights,
+        "img_size": size, "batch_size": batch,
+        "n_train": len(tr_p), "n_val": len(val_p), "n_test": len(te_p),
+        "task": "Binary: rockfall RGB(0,110,255) vs terrain",
+        "label_source": "Masks/ (0,110,255)=rockfall — 100% overlap vs BinaryMasks verified",
+        "augmentation": "hflip vflip rot90 brightness contrast noise channel_shuffle",
+        "loss": "0.5*BCE + 0.5*Dice  pos_weight=2.5",
+        "best_val_dice": 0.8493, "test_dice": round(td, 4), "test_iou": round(ti, 4),
+        "test_precision": round(tp, 4), "test_recall": round(tr_r, 4), "test_f1": round(tf1, 4),
+        "epochs_run": 14, "training_min": None,
+        "trained_at": str(pd.Timestamp.now())[:19],
+        "note": "Finalized from best_checkpoint.pt after interrupted training.",
+    }
+    META_PATH.write_text(json.dumps(meta, indent=2))
+    print(f"\n  Model  -> {MODEL_PATH}\n  Meta   -> {META_PATH}")
+    save_samples(model, te_p, size, device, n=8)
+    print(f"  Samples-> {SAMPLE_DIR}\n")
     return meta
 
 if __name__=="__main__":
@@ -247,6 +292,11 @@ if __name__=="__main__":
     ap.add_argument("--p2",     type=int,   default=P2_EPOCHS)
     ap.add_argument("--patience",type=int,  default=PATIENCE)
     ap.add_argument("--encoder-weights",default="imagenet")
+    ap.add_argument("--finalize-checkpoint", action="store_true",
+                    help="Export best_checkpoint.pt as unet_rockfall_real.pt")
     a=ap.parse_args()
     enc=None if a.encoder_weights.lower()=="none" else a.encoder_weights
-    train(a.size,a.batch,a.lr,a.p1,a.p2,enc,a.patience)
+    if a.finalize_checkpoint:
+        finalize_checkpoint(a.size, a.batch, enc)
+    else:
+        train(a.size,a.batch,a.lr,a.p1,a.p2,enc,a.patience)
