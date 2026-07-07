@@ -1,0 +1,34 @@
+services:
+  # ── 1. FastAPI Web Service ──────────────────────────────────────────────────
+  - type: web
+    name: rockfall-backend
+    env: docker
+    dockerfilePath: Dockerfile.backend
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: MONGO_HOST
+        value: "localhost" # Fallback, user can edit this to point to MongoDB Atlas
+      - key: MONGO_PORT
+        value: "27017"
+      - key: MONGO_DB
+        value: "rockfall_geosafety"
+      - key: MONGO_USER
+        value: ""
+      - key: MONGO_PASSWORD
+        value: ""
+
+  # ── 2. Next.js Frontend Web Service ─────────────────────────────────────────
+  - type: web
+    name: rockfall-frontend
+    env: docker
+    dockerfilePath: Dockerfile.ui
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: PORT
+        value: 3000
+    dockerBuildArgs:
+      NEXT_PUBLIC_API_URL: https://rockfall-backend.onrender.com
