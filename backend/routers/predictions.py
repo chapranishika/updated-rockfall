@@ -199,5 +199,126 @@ async def model_info():
             "image":   "POST /predict/image",
             "fusion":  "POST /predict/final",
             "demo":    "GET  /predict/demo",
+            "tourist": "POST /predict/tourist",
         },
     }
+
+
+@router.post(
+    "/tourist",
+    summary="Tourist safety risk prediction with location and live photo",
+    description="""
+    Fetches real-time weather data for the requested location name, merges it with 
+    current geotechnical sensor telemetry, and runs the multi-modal risk predictor 
+    with their live slope photo.
+    """,
+)
+async def predict_tourist(
+    location_name: str = Form(..., description="Name of the tourist location (e.g. Yosemite Valley)"),
+    file: Optional[UploadFile] = File(None, description="Optional tourist live photo of the slope"),
+):
+    import urllib.parse
+    import httpx
+
+    quoted_name = urllib.parse.quote(location_name.strip())
+    geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={quoted_name}&count=1&language=en&format=json"
+
+    try:
+        async with httpx.AsyncClient() as client:
+            geo_res = await client.get(geo_url)
+            geo_res.raise_for_status()
+            geo_data = geo_res.json()
+    except Exception as e:
+        raise HTTPException(502, detail=f"Geocoding service unavailable: {e}")
+
+    results = geo_data.get("results")
+    if not results:
+        raise HTTPException(404, detail=f"Location '{location_name}' could not be resolved. Please enter a valid city, park, or region name.")
+
+    loc = results[0]
+    lat = loc["latitude"]
+    lon = loc["longitude"]
+    resolved_location = f"{loc['name']}, {loc.get('admin1', '')}, {loc.get('country', '')}"
+
+    # Fetch weather
+    weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,rain,showers,snowfall,weather_code"
+    try:
+        async with httpx.AsyncClient() as client:
+            weather_res = await client.get(weather_url)
+            weather_res.raise_for_status()
+            weather_data = weather_res.json()
+    except Exception as e:
+        raise HTTPException(502, detail=f"Weather service unavailable: {e}")
+
+    current = weather_data.get("current")
+    if not current:
+        raise HTTPException(502, detail="Weather data parse error: missing 'current' field")
+
+    temperature = float(current.get("temperature_2m", 20.0))
+    rain = float(current.get("rain", 0.0))
+    showers = float(current.get("showers", 0.0))
+    snowfall = float(current.get("snowfall", 0.0))
+    rainfall = rain + showers + snowfall
+    w_code = current.get("weather_code", 0)
+
+    WMO_CODES = {
+        0: "Clear Sky",
+        1: "Mainly Clear", 2: "Partly Cloudy", 3: "Overcast",
+        45: "Foggy", 48: "Depositing Rime Fog",
+        51: "Light Drizzle", 53: "Moderate Drizzle", 55: "Dense Drizzle",
+        56: "Light Freezing Drizzle", 57: "Dense Freezing Drizzle",
+        61: "Slight Rain", 63: "Moderate Rain", 65: "Heavy Rain",
+        66: "Light Freezing Rain", 67: "Heavy Freezing Rain",
+        71: "Slight Snowfall", 73: "Moderate Snowfall", 75: "Heavy Snowfall",
+        77: "Snow Grains",
+        80: "Slight Rain Showers", 81: "Moderate Rain Showers", 82: "Violent Rain Showers",
+        85: "Slight Snow Showers", 86: "Heavy Snow Showers",
+        95: "Thunderstorm", 96: "Thunderstorm with Slight Hail", 99: "Thunderstorm with Heavy Hail"
+    }
+    weather_desc = WMO_CODES.get(w_code, "Unknown Weather")
+
+    # Get live sensor data
+    try:
+        from backend.routers.websocket import _simulator
+        sim_state = _simulator.state
+    except Exception:
+        sim_state = {
+            "vibration": 0.02,
+            "displacement": 0.1,
+            "pore_pressure": 0.05,
+            "strain": 0.02,
+        }
+
+    sensors = {
+        "vibration": float(sim_state.get("vibration", 0.02)),
+        "displacement": float(sim_state.get("displacement", 0.1)),
+        "pore_pressure": float(sim_state.get("pore_pressure", 0.05)),
+        "strain": float(sim_state.get("strain", 0.02)),
+        "temperature": temperature,
+        "rainfall": rainfall
+    }
+
+    # Run predictions
+    img_bytes = None
+    if file is not None:
+        img_bytes = await file.read()
+        if not img_bytes:
+            img_bytes = None
+
+    result = _reg().predict_fused(sensors, img_bytes)
+
+    # Attach tourist metadata
+    result["tourist_meta"] = {
+        "requested_location": location_name,
+        "resolved_location": resolved_location,
+        "latitude": lat,
+        "longitude": lon,
+        "weather": {
+            "temperature_c": temperature,
+            "rainfall_mm": rainfall,
+            "description": weather_desc,
+            "code": w_code
+        }
+    }
+    return JSONResponse(content=result)
+
