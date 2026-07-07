@@ -1,3 +1,6 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = { output: "standalone" };
+const nextConfig = {
+  /* Vercel handles serverless trace compilation natively */
+};
 module.exports = nextConfig;
+
