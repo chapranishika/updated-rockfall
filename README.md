@@ -40,3 +40,23 @@ A real-time, microservice-inspired geophysical monitoring platform that combines
 * **Data Stores**: MongoDB Document Store.
 * **APIs**: Open-Meteo, OpenStreetMap Nominatim.
 * **Deployments**: Vercel (Frontend), Hugging Face Spaces (Backend).
+
+---
+
+## 📸 Screenshots & Architecture Gallery
+
+### 1. Enterprise Architecture Diagram
+![Geophysical Safety Platform: Enterprise Architecture](screenshots/architecture_diagram.png)
+
+### 2. Tourist Slope Safety Portal (Dark Theme)
+![Tourist Slope Safety Portal - Dark Mode](screenshots/dark_mode_dashboard.png)
+
+### 3. Slope Safety Assessment (Light Theme)
+![Slope Safety Assessment - Light Mode](screenshots/light_mode_dashboard.png)
+
+### 4. Vercel & Render Setup Reference
+* **Render Deployment Billing Validation**:
+  ![Render Deployment Issue](screenshots/render_deployment_issue.png)
+* **Android LocationTracker Project Sync**:
+  ![Android Studio Setup](screenshots/android_studio_setup.png)
+
