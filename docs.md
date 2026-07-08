@@ -9,7 +9,7 @@ Welcome to the official technical documentation for **Rockfall-AI** — a real-t
 * **GitHub Repository**: [github.com/chapranishika/updated-rockfall](https://github.com/chapranishika/updated-rockfall)
 * **Hugging Face Space (FastAPI Backend)**: [huggingface.co/spaces/Nishika1202/rockfall-backend](https://huggingface.co/spaces/Nishika1202/rockfall-backend)
   * *API Endpoint*: `https://nishika1202-rockfall-backend.hf.space`
-* **Vercel Web Application (Next.js UI)**: [updated-rockfall-7j5r.vercel.app](https://updated-rockfall-7j5r.vercel.app)
+* **Vercel Web Application (Next.js UI)**: [updated-rockfall-7j5r-chapranishika-6036s-projects.vercel.app](https://updated-rockfall-7j5r-chapranishika-6036s-projects.vercel.app)
 
 ---
 
