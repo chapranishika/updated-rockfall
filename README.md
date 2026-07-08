@@ -45,18 +45,70 @@ A real-time, microservice-inspired geophysical monitoring platform that combines
 
 ## 📸 Screenshots & Architecture Gallery
 
-### 1. Enterprise Architecture Diagram
+### 1. Enterprise System Architecture
 ![Geophysical Safety Platform: Enterprise Architecture](screenshots/architecture_diagram.png)
 
-### 2. Tourist Slope Safety Portal (Dark Theme)
-![Tourist Slope Safety Portal - Dark Mode](screenshots/dark_mode_dashboard.png)
+---
 
-### 3. Slope Safety Assessment (Light Theme)
-![Slope Safety Assessment - Light Mode](screenshots/light_mode_dashboard.png)
+### 2. Tourist Slope Safety Portal
 
-### 4. Vercel & Render Setup Reference
-* **Render Deployment Billing Validation**:
+* **Initial Tourist Search Portal (Dark Theme)**:
+  ![Tourist Slope Safety Portal - Dark Mode](screenshots/dark_mode_dashboard.png)
+  
+* **Slope Safety Search Dashboard (Light Theme)**:
+  ![Slope Safety Assessment - Light Mode](screenshots/light_mode_dashboard.png)
+
+* **Tourist Slope Safety Initial State (Dark Theme)**:
+  ![Tourist Slope Safety - Dark Search](screenshots/tourist_slope_dark.png)
+
+* **Safety Assessment Report - Yosemite Valley (Medium Risk - 38%)**:
+  ![Safety Report Yosemite](screenshots/worker_yosemite_report.png)
+
+* **Safety Assessment Report - Navi Mumbai (Low Risk - 0%)**:
+  ![Safety Report Mumbai](screenshots/tourist_mumbai_report.png)
+
+* **Climatological & Telemetry Integration (Navi Mumbai)**:
+  ![Mumbai Weather & Telemetry](screenshots/tourist_mumbai_telemetry.png)
+
+* **Adjacent Micro-Terrain Hazard Breakdowns (Navi Mumbai)**:
+  ![Mumbai Terrain Breakdown](screenshots/tourist_mumbai_terrains.png)
+
+* **Telemetry & Vision Weight Score Distribution**:
+  ![Weights Breakdown](screenshots/tourist_weights_breakdown.png)
+
+---
+
+### 3. Worker Geophysical Monitoring Dashboard
+
+* **Live Monitoring Overview Dashboard (65% Medium Risk)**:
+  ![Worker Live Dashboard](screenshots/worker_dashboard_live.png)
+
+* **Real-Time Geotechnical Sensors Telemetry (Active WebSockets & Database Sync)**:
+  ![Worker Sensors Live](screenshots/worker_sensors_live.png)
+
+* **Spatial Risk Grid Heatmap (Multi-Modal Slope Risk Grid)**:
+  ![Worker Heatmap Grid](screenshots/worker_heatmap_grid.png)
+
+* **Drone Image Segmentation Analysis (U-Net + ResNet34 Custom Model)**:
+  ![Worker Image Analysis](screenshots/worker_image_analysis.png)
+
+* **Session Analytics & Historical CSV Logs Exports**:
+  ![Worker Reports CSV](screenshots/worker_reports_csv.png)
+
+* **Worker Dashboard Offline State Verification**:
+  ![Worker Dashboard Offline](screenshots/worker_dashboard_offline.png)
+
+* **Adjacent Micro-Terrain Hazard breakdowns (Worker View)**:
+  ![Worker Terrain Breakdown](screenshots/worker_terrain_breakdown.png)
+
+---
+
+### 4. Setup, Deployment & Development Reference
+
+* **Render Blueprint Billing Validation Checks**:
   ![Render Deployment Issue](screenshots/render_deployment_issue.png)
-* **Android LocationTracker Project Sync**:
+  
+* **Android LocationTracker Project Gradle Sync**:
   ![Android Studio Setup](screenshots/android_studio_setup.png)
+
 
