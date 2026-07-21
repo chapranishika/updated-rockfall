@@ -16,7 +16,7 @@ A real-time, microservice-inspired geophysical monitoring platform that combines
 
 ## 🔗 Live Deployment Links
 
-* **GitHub Repository**: [github.com/chapranishika/updated-rockfall](https://github.com/chapranishika/updated-rockfall)
+* **GitHub Repository**: [github.com/chapranishika/rockfall-ai](https://github.com/chapranishika/rockfall-ai)
 * **Hugging Face Space (FastAPI Backend)**: [huggingface.co/spaces/Nishika1202/rockfall-backend](https://huggingface.co/spaces/Nishika1202/rockfall-backend)
   * *API Endpoint*: `https://nishika1202-rockfall-backend.hf.space`
 * **Vercel Web Application (Next.js UI)**: [updated-rockfall-7j5r-chapranishika-6036s-projects.vercel.app](https://updated-rockfall-7j5r-chapranishika-6036s-projects.vercel.app)
